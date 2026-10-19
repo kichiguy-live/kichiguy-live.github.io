@@ -537,9 +537,10 @@ window.melSecretTap=(i)=>{if(running||!error.hidden||!secret.hidden)return;
     clearHints();
     document.body.classList.add('mel-hint-2');
     window.kichiSeg?.horror(2);
-  }else if(progress===0){
-    // Any broken sequence, including a new 0, cancels the visible anomaly.
-    // The new 0 still starts a fresh 0 -> 8 candidate via hintProgress above.
+  }else{
+    // Any tap that does not advance a visible horror stage clears its anomaly,
+    // including 0 -> 8 -> 2 -> 8 (the last 8 starts a NEW sequence).
+    // The command progress trackers above still preserve valid new prefixes.
     clearHints();
     window.kichiSeg?.stop();
   }
