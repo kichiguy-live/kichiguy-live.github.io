@@ -842,7 +842,10 @@ let token=0,rolling=false,blinkTimer=null,blinkEnd=null,toastTimer=null,display=
 const word=document.createElement('div');word.className='seg-word';word.textContent='あたり';el.querySelector('.seg-face').append(word);
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function renderMission(){const summary=document.getElementById('missionSummary'),grid=document.getElementById('missionGrid');if(!summary||!grid)return;const n=defs.filter(d=>done[d[0]]).length;summary.innerHTML='<div class="mission-progress-top"><span>MISSION PROGRESS</span><strong>'+n+' <em>/ '+defs.length+'</em></strong></div><div class="mission-progress-track"><div class="mission-progress-fill" style="width:'+(defs.length?100*n/defs.length:0)+'%"></div></div><div class="mission-stats"><div class="mission-stat"><span>累計回転数</span><strong>'+stats.spins.toLocaleString()+' <small>G</small></strong></div><div class="mission-stat"><span>累計大当たり</span><strong>'+stats.wins.toLocaleString()+' <small>回</small></strong></div></div>';grid.innerHTML=defs.map((d,i)=>'<div class="mission-card '+(done[d[0]]?'cleared':'locked')+'"><div class="mission-no">NO.<strong>'+String(i+1).padStart(3,'0')+'</strong></div><div class="mission-info"><strong>'+(done[d[0]]?d[1]:'？？？')+'</strong><small>'+(done[d[0]]?d[2]:'？？？')+'</small></div><div class="mission-mark">'+(done[d[0]]?'CLEAR':'<span aria-label="未解放">🔒</span>')+'</div></div>').join('');}
-function mission(id){if(done[id])return;done[id]=true;save(MISSIONS,done);renderMission();const def=defs.find(d=>d[0]===id);if(!def)return;const toast=document.createElement('div');toast.className='mission-toast';toast.textContent='MISSION CLEAR！　'+def[1];document.body.append(toast);setTimeout(()=>toast.remove(),2800);}
+let pendingMissionPopups=[];
+function showMissionPopup(id){const def=defs.find(d=>d[0]===id);if(!def)return;const toast=document.createElement('div');toast.className='mission-toast';toast.textContent='MISSION CLEAR！　'+def[1];document.body.append(toast);setTimeout(()=>toast.remove(),2800);}
+function flushMissionPopups(){const items=pendingMissionPopups.splice(0);items.forEach((id,i)=>setTimeout(()=>showMissionPopup(id),i*350));}
+function mission(id){if(done[id])return;done[id]=true;save(MISSIONS,done);renderMission();if(rolling)pendingMissionPopups.push(id);else showMissionPopup(id);}
 function notify(state,won=false){window.dispatchEvent(new CustomEvent('kichi-seg-state',{detail:{state,won}}));}
 function paint(value){display=value;svg.setAttribute('aria-label',value);svg.innerHTML=[...value].map((d,i)=>'<g transform="translate('+(i*26)+',0)">'+shapes.map((p,j)=>'<polygon class="'+((bits[d]||[]).includes(j)?'on':'off')+'" points="'+p+'"/>').join('')+'</g>').join('');}
 function triple(v){return /^[0-9]{3}$/.test(v)&&v[0]===v[1]&&v[1]===v[2]}
@@ -853,8 +856,8 @@ function setResult(value,source,fx=''){result={value,source,at:Date.now(),fx};sa
 function showVisible(v){el.hidden=!v;open.hidden=v;try{localStorage.setItem(VIS_STORE,v?'1':'0')}catch(e){}}
 closeBtn.addEventListener('click',()=>showVisible(false));open.addEventListener('click',()=>showVisible(true));showVisible(localStorage.getItem(VIS_STORE)!=='0');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function horror(step){const t=++token;rolling=false;rollBtn.disabled=true;clearBlink();notify('horror');colors('normal');el.classList.add('seg-horror');const v=['---','4--','40-','404'][step]||'---';if(step===0){stop();return}const pos=step-1;for(let n=0;n<8;n++){if(t!==token)return;const a=v.split('');a[pos]=String(Math.floor(Math.random()*10));paint(a.join(''));await sleep(40)}if(t===token)paint(v)}
-function stop(){token++;rolling=false;rollBtn.disabled=false;el.classList.remove('seg-huge','seg-tiny','seg-blackout','seg-word-mode');colors(result.source,['white','red','gold','rainbow'].includes(result.fx)?result.fx:'');paint(result.value);if(result.source==='normal'&&result.fx==='word')el.classList.add('seg-word-mode');clearBlink();blink(result.value);notify('restore',result.source==='secret'&&winners.includes(result.value))}
+async function horror(step){const t=++token;rolling=false;pendingMissionPopups.length=0;rollBtn.disabled=true;clearBlink();notify('horror');colors('normal');el.classList.add('seg-horror');const v=['---','4--','40-','404'][step]||'---';if(step===0){stop();return}const pos=step-1;for(let n=0;n<8;n++){if(t!==token)return;const a=v.split('');a[pos]=String(Math.floor(Math.random()*10));paint(a.join(''));await sleep(40)}if(t===token)paint(v)}
+function stop(){token++;rolling=false;pendingMissionPopups.length=0;rollBtn.disabled=false;el.classList.remove('seg-huge','seg-tiny','seg-blackout','seg-word-mode');colors(result.source,['white','red','gold','rainbow'].includes(result.fx)?result.fx:'');paint(result.value);if(result.source==='normal'&&result.fx==='word')el.classList.add('seg-word-mode');clearBlink();blink(result.value);notify('restore',result.source==='secret'&&winners.includes(result.value))}
 function randomDigit(){return String(Math.floor(Math.random()*10))}
 // The jackpot draw stays at 4.5%; effect frequencies are weighted by outcome.
 // Bayes calibration gives approximate standalone effect reliability.
@@ -864,7 +867,7 @@ function chanceEffect(win,winRate,target){
  return Math.random()<(win?winRate:loseRate);
 }
 function weightedDigit(win){
- // 7 tenpai is always a win. 3 is the strongest non-guaranteed digit.
+ // 7 tenpai and full blackout freeze are always wins. 3 is the strongest non-guaranteed digit.
  const weights=win?[.07,.09,.07,.22,.07,.09,.07,.13,.07,.12]:[.125,.085,.125,.065,.125,.085,.125,0,.125,.14];
  let r=Math.random()*weights.reduce((a,b)=>a+b,0);
  for(let i=0;i<10;i++){r-=weights[i];if(r<=0)return String(i)}return '9';
@@ -873,12 +876,12 @@ function pickOutcome(){
  const win=Math.random()<BASE_WIN;
  const digit=win?weightedDigit(true):null;
  let value=win?digit.repeat(3):String(Math.floor(Math.random()*1000)).padStart(3,'0');
- if(!win){while(triple(value))value=String(Math.floor(Math.random()*1000)).padStart(3,'0')}
+ if(!win){while(triple(value)||[...value].filter(d=>d==='7').length>=2)value=String(Math.floor(Math.random()*1000)).padStart(3,'0')}
  return {win,value};
 }
 function pickMainEffect(win){
  // Exclusive main glow/premium. Standalone target: white 10%, red 35%, gold 80%.
- // Rainbow and all premiums are guaranteed.
+ // Rainbow and all premiums are guaranteed; blackout freeze is jackpot-only.
  const pool=win?[['huge',.005],['tiny',.005],['rainbow',.015],['gold',.04],['word',.05],['dash',.055],['red',.17],['white',.20]]
  :[['red',.17*BASE_WIN*(1-.35)/(.35*(1-BASE_WIN))],['gold',.04*BASE_WIN*(1-.80)/(.80*(1-BASE_WIN))],['white',.20*BASE_WIN*(1-.10)/(.10*(1-BASE_WIN))]];
  let r=Math.random();for(const [name,p] of pool){r-=p;if(r<0)return name}return '';
@@ -887,6 +890,8 @@ async function roll(won=false,source='secret'){
  if(rolling)return false;rolling=true;rollBtn.disabled=true;const t=++token;clearBlink();el.classList.remove('seg-huge','seg-tiny','seg-word-mode');colors(source);notify('rolling');
  const normal=source==='normal';let value,win=false;if(normal){const o=pickOutcome();value=o.value;win=o.win;stats.spins++;if(win)stats.wins++;save(STATS,stats);renderMission();mission('normal');for(const n of [100,500,1000,5000,10000])if(stats.spins>=n)mission('spin'+n);for(const n of [1,10,50,100,500])if(stats.wins>=n)mission('win'+n)}else if(won){value=winners[Math.floor(Math.random()*winners.length)];win=true}else{do{value=String(Math.floor(Math.random()*1000)).padStart(3,'0')}while(winners.includes(value))}
  let fx=normal?pickMainEffect(win):'';
+ // White/red glow is a start-of-spin cue, not a post-stop announcement.
+ if(normal&&['white','red','gold','rainbow'].includes(fx))colors(source,fx);
  if(normal&&fx==='rainbow')mission('rainbow');if(normal&&fx==='gold')mission('gold');if(normal&&fx==='white')mission('white');if(normal&&fx==='red')mission('red');
  // Two or more distinct chance-ups guarantee a jackpot. Losing draws
  // therefore select at most ONE effect, including glow, stop order and flash.
@@ -903,7 +908,7 @@ async function roll(won=false,source='secret'){
    countStart=count?(Math.random()<.12?2:Math.random()<.24?1:0):0;
  }else if(normal&&!fx){
    // Conditional miss-side weights; no chance-up combinations on a miss.
-   const choices=[['rare',.13,.20],['middle',.10,.20],['irregular',.12,.10],['long',.18,.15],['silent',.12,.15],['blackout',.12,.30],['count',.15,.20]];
+   const choices=[['rare',.13,.20],['middle',.10,.20],['irregular',.12,.10],['long',.18,.15],['silent',.12,.15],['count',.15,.20]];
    const weights=choices.map(([,w,t])=>w*BASE_WIN*(1-t)/(t*(1-BASE_WIN)));
    let r=Math.random();
    for(let i=0;i<choices.length;i++){r-=weights[i];if(r<0){
@@ -913,7 +918,6 @@ async function roll(won=false,source='secret'){
      if(kind==='irregular')irregular=true;
      if(kind==='long')long=true;
      if(kind==='silent')silent=true;
-     if(kind==='blackout')blackout=true;
      if(kind==='count')count=true;
      break;
    }}
@@ -959,10 +963,10 @@ async function roll(won=false,source='secret'){
    if(k===1&&normal){const a=order.slice(0,2);const tens=value[a[0]]===value[a[1]];if(tens){mission('tenpai');if(value[a[0]]==='7')mission('seven');if(rare){mission('flash');for(let z=0;z<3;z++){if(t!==token)return false;el.classList.toggle('seg-blink');await sleep(120)}el.classList.remove('seg-blink')}await sleep(650)}}
  }
  if(t!==token)return false;
- rolling=false;rollBtn.disabled=false;result={value,source,at:Date.now(),fx};save(RESULT_STORE,result);colors(source,fx==='huge'||fx==='tiny'||fx==='word'||fx==='dash'?'':fx);paint(value);clearBlink();if(normal&&win&&fx==='word'){el.classList.add('seg-word-mode');mission('word');}
+ rolling=false;rollBtn.disabled=false;result={value,source,at:Date.now(),fx};save(RESULT_STORE,result);if(!['white','red','gold','rainbow'].includes(fx))colors(source,fx==='huge'||fx==='tiny'||fx==='word'||fx==='dash'?'':fx);paint(value);clearBlink();if(normal&&win&&fx==='word'){el.classList.add('seg-word-mode');mission('word');}
  if(win&&normal&&fx==='tiny')el.classList.remove('seg-tiny');
  if(triple(value)){blink(value,()=>{el.classList.remove('seg-huge','seg-tiny')})}else el.classList.remove('seg-huge','seg-tiny');
- notify('settled',source==='secret'&&winners.includes(value));return true;
+ notify('settled',source==='secret'&&winners.includes(value));flushMissionPopups();return true;
 }
 rollBtn.addEventListener('click',()=>roll(false,'normal'));window.kichiSeg={horror,stop,roll};colors(result.source,['white','red','gold','rainbow'].includes(result.fx)?result.fx:'');paint(result.value);if(result.source==='normal'&&result.fx==='word')el.classList.add('seg-word-mode');renderMission();if(triple(result.value))blink(result.value);
 setInterval(()=>{if(!rolling&&result.at&&Date.now()-result.at>=3600000){result={value:'---',source:'normal',at:0};save(RESULT_STORE,result);colors('normal');clearBlink();paint('---')}},30000);
