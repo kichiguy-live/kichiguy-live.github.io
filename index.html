@@ -550,6 +550,10 @@ window.melSecretTap=(i)=>{if((window.kichiMel?.getCollected().length||0)!==18)re
   hintProgress=i===hintSeq[hintProgress]?hintProgress+1:(i===0?1:0);
   phantomProgress=i===phantomSeq[phantomProgress]?phantomProgress+1:(i===phantomSeq[0]?1:0);
   progress=i===seq[progress]?progress+1:(i===seq[0]?1:0);
+  // A completed secret sequence must take precedence over resetting clues.
+  // In particular, the final 6 of 0→8→2→6 must not call kichiSeg.stop().
+  if(progress===seq.length){progress=0;hintProgress=0;phantomProgress=0;stageTwoArmed=false;begin();return;}
+  if(phantomProgress===phantomSeq.length){phantomProgress=0;window.dispatchEvent(new Event('kichi-phantom-command'));return;}
   if(completedHint){
     hintProgress=0;
     stageTwoArmed=true;
@@ -569,8 +573,6 @@ window.melSecretTap=(i)=>{if((window.kichiMel?.getCollected().length||0)!==18)re
     clearHints();
     window.kichiSeg?.stop();
   }
-  if(progress===seq.length){progress=0;hintProgress=0;phantomProgress=0;stageTwoArmed=false;begin();return;}
-  if(phantomProgress===phantomSeq.length){phantomProgress=0;window.dispatchEvent(new Event('kichi-phantom-command'));}
 };
 document.getElementById('melErrorLogo').addEventListener('click',()=>{error.hidden=true;secret.hidden=false;secret.classList.add('pop-reveal');try{localStorage.setItem('kichiguy_horror_completed_v37','1')}catch(e){};window.dispatchEvent(new Event('kichi-horror-unlocked'));const conf=document.createElement('div');conf.className='pop-confetti';for(let i=0;i<28;i++){const e=document.createElement('span');e.textContent=['♥','✦','★','◆'][i%4];e.style.setProperty('--x',((i*37)%97)+'%');e.style.setProperty('--c',['#fff39a','#fff','#a4f8ff','#ff75c4'][i%4]);e.style.setProperty('--size',(15+i%4*7)+'px');e.style.setProperty('--duration',(2+i%5*.3)+'s');e.style.setProperty('--delay',(i%7*.08)+'s');conf.append(e)}secret.append(conf);schedule(()=>conf.remove(),4400)});
 for(const id of ['melErrorExit','melSecretExit'])document.getElementById(id).addEventListener('click',closeAll);
@@ -847,7 +849,7 @@ body.kichi-mission-mode #secretSeg.seg-mega{position:fixed!important;top:50%!imp
 #kichiAdminAuth,.kichi-admin-row button{border:0;border-radius:8px;padding:11px 14px;background:#a92f72;color:white;font-weight:800;cursor:pointer}
 .kichi-admin-row{display:flex;align-items:center;gap:6px;margin-top:12px;text-align:left}.kichi-admin-row span{flex:1;font-size:12px}.kichi-admin-row button{padding:9px;font-size:12px;white-space:nowrap}.kichi-admin-note{font-size:11px;line-height:1.5}.admin-long-press{touch-action:pan-y;user-select:none;-webkit-user-select:none}
 </style><div id="kichiAdminGate" class="kichi-admin-overlay" hidden><div class="kichi-admin-panel"><button id="kichiAdminClose" class="kichi-admin-x" type="button" aria-label="閉じる">×</button><div class="kichi-admin-symbol">⬡</div><h2>KiCHiGUY LIVE</h2><div class="kichi-admin-kicker">ADMINISTRATOR ACCESS</div><p id="kichiAdminStatus">RESTRICTED AREA</p><div id="kichiAdminLogin"><input id="kichiAdminPassword" type="password" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••" aria-label="管理者パスワード"><button id="kichiAdminAuth" type="button">AUTHENTICATE</button></div><div id="kichiAdminControls" hidden><div class="kichi-admin-kicker">ACCESS GRANTED</div><div class="kichi-admin-row"><span>ドットメル図鑑（18体）</span><button data-admin="mel-on">全解放</button><button data-admin="mel-off">リセット</button></div><div class="kichi-admin-row"><span>PHANTOM COLLECTION</span><button data-admin="phantom-on">全解放</button><button data-admin="phantom-off">リセット</button></div><div class="kichi-admin-row"><span>SEG MISSION（71種）</span><button data-admin="mission-on">全達成</button><button data-admin="mission-off">リセット</button></div><div class="kichi-admin-row"><span>一括操作</span><button data-admin="all-on">全解放</button><button data-admin="all-off">全リセット</button></div><p class="kichi-admin-note">変更後は自動的に再読み込みします。全リセットは上記3種の進行データのみ対象です。</p></div></div></div><div id="secretSeg" role="group" aria-label="運試し3桁セグ">
-<div class="seg-top"><span class="seg-title">LUCKY DRAW <small class="seg-build">v7.0</small></span><button type="button" class="seg-close" aria-label="セグを閉じる">×</button></div>
+<div class="seg-top"><span class="seg-title">LUCKY DRAW <small class="seg-build">v7.1</small></span><button type="button" class="seg-close" aria-label="セグを閉じる">×</button></div>
 <div class="seg-face"><svg viewBox="0 0 78 29" xmlns="http://www.w3.org/2000/svg" aria-label="3桁の数字"></svg></div>
 <div class="seg-bottom"><a class="seg-caption" href="#mission" id="missionSegLink">MISSIONで大画面プレイ！</a><button type="button" class="seg-roll">抽選</button></div></div>
 <button id="secretSegOpen" type="button" hidden>◉ セグ起動</button>
@@ -879,7 +881,7 @@ function showMissionPopup(id){const def=defs.find(d=>d[0]===id);if(!def)return;c
 function flushMissionPopups(){const items=[...new Set(pendingMissionPopups.splice(0))];if(!items.length)return;setTimeout(()=>{items.forEach(showMissionPopup)},220);}
 function mission(id){if(done[id])return;done[id]=true;save(MISSIONS,done);renderMission();if(missionPopupsLocked||rolling)pendingMissionPopups.push(id);else showMissionPopup(id);}
 function notify(state,won=false){window.dispatchEvent(new CustomEvent('kichi-seg-state',{detail:{state,won}}));}
-const melOverlay=document.createElement('div');melOverlay.className='seg-mel-reel';el.querySelector('.seg-face').append(melOverlay);let invisibleStops=[false,false,false];function paintMel(n,stops){const sprites=window.kichiMel?.sprites||[];melOverlay.innerHTML=[0,1,2].map(i=>stops[i]&&sprites[n]?'<img src="'+sprites[n]+'" alt="ドットメル">':'<span style="width:30%"></span>').join('');}function clearMel(){melOverlay.replaceChildren();melFixed=null;}function paint(value){display=value;svg.setAttribute('aria-label',value);svg.innerHTML=[...value].map((d,i)=>'<g style="opacity:'+(el.classList.contains('seg-invisible')&&!invisibleStops[i]?0:1)+'" transform="translate('+(i*26)+',0)">'+shapes.map((p,j)=>'<polygon class="'+((bits[d]||[]).includes(j)?'on':'off')+'" points="'+p+'"/>').join('')+'</g>').join('');}
+const melOverlay=document.createElement('div');melOverlay.className='seg-mel-reel';el.querySelector('.seg-face').append(melOverlay);let invisibleStops=[false,false,false];function paintMel(n,stops){const sprites=window.kichiMel?.sprites||[];melOverlay.innerHTML=[0,1,2].map(i=>stops[i]&&sprites[n]?'<img src="'+sprites[n]+'" alt="ドットメル">':'<span style="width:30%"></span>').join('');}function clearMel(){melOverlay.replaceChildren();}function paint(value){display=value;svg.setAttribute('aria-label',value);svg.innerHTML=[...value].map((d,i)=>'<g style="opacity:'+(el.classList.contains('seg-invisible')&&!invisibleStops[i]?0:1)+'" transform="translate('+(i*26)+',0)">'+shapes.map((p,j)=>'<polygon class="'+((bits[d]||[]).includes(j)?'on':'off')+'" points="'+p+'"/>').join('')+'</g>').join('');}
 function triple(v){return /^[0-9]{3}$/.test(v)&&v[0]===v[1]&&v[1]===v[2]}
 function clearBlink(){clearInterval(blinkTimer);clearTimeout(blinkEnd);blinkTimer=blinkEnd=null;el.classList.remove('seg-blink')}
 function colors(source,fx=''){el.classList.remove('seg-blue','seg-horror','seg-white','seg-red','seg-gold','seg-rainbow','seg-blackout','seg-word-mode');if(source==='secret')el.classList.add('seg-blue');else if(fx)el.classList.add('seg-'+fx)}
