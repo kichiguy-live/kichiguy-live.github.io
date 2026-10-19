@@ -537,7 +537,9 @@ window.melSecretTap=(i)=>{if(running||!error.hidden||!secret.hidden)return;
     clearHints();
     document.body.classList.add('mel-hint-2');
     window.kichiSeg?.horror(2);
-  }else if(i!==0&&progress===0){
+  }else if(progress===0){
+    // Any broken sequence, including a new 0, cancels the visible anomaly.
+    // The new 0 still starts a fresh 0 -> 8 candidate via hintProgress above.
     clearHints();
     window.kichiSeg?.stop();
   }
