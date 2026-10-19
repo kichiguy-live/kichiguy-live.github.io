@@ -415,6 +415,11 @@ body.mel-gallery-modal-open{overflow:hidden}
 @keyframes kichiMissionAppear{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 /* Glow is active while digits are rolling, never after they have settled. */
 #secretSeg.seg-white,#secretSeg.seg-red,#secretSeg.seg-gold,#secretSeg.seg-rainbow{transition:box-shadow .1s ease}
+#secretSeg .seg-build{font-size:10px;font-weight:700;color:#f9c5ff;background:#552b65;border-radius:5px;padding:2px 5px;margin-left:5px;vertical-align:middle}
+#secretSeg[data-phase="rolling"][data-glow="white"] .seg-face{outline:3px solid #fff;box-shadow:0 0 30px 10px #fff9!important}
+#secretSeg[data-phase="rolling"][data-glow="red"] .seg-face{outline:3px solid #ff304d;box-shadow:0 0 30px 10px #ff304da9!important}
+#secretSeg[data-phase="rolling"][data-glow="gold"] .seg-face{outline:3px solid #ffd24d;box-shadow:0 0 30px 10px #ffd24da9!important}
+#secretSeg[data-phase="rolling"][data-glow="rainbow"] .seg-face{outline:3px solid #d26aff;box-shadow:0 0 30px 10px #d26affa9!important}
 </style></head><body><div aria-hidden="true" id="kichiguy-fog"><span class="fog-bank"></span><span class="fog-bank"></span><span class="fog-bank"></span></div><div class="top"></div><header class="brand-header"><div class="brand-kicker"><span class="led"></span> OFFICIAL WEBSITE <span class="brand-star">✦ ✦ ✦</span></div><div class="brand-word glitch" data-text="KiCHiGUY">KiCHi<span>GUY</span></div><div class="brand-bottom"><span>🎰 SLOT COLLECTION</span><span>✦</span><span>📡 LIVE STREAMING</span></div><div aria-hidden="true" class="pixels">▟ ░ ▞ ░ ▟ ░ ▞ ░ ▟</div></header><nav><div class="navin" id="nav"></div></nav><main class="wrap">
 <section class="page" id="mission"><div class="section-head"><div class="eyebrow">COLLECTION</div><h2>SEG MISSION</h2><p>セグ抽選でさまざまな演出を発見し、ミッションを達成しよう！</p><p>一度見た演出はコレクションに記録されます。すべての演出を見つけてコンプリートを目指そう！</p></div><div class="mission-summary" id="missionSummary"></div><div class="mission-grid" id="missionGrid"></div><div class="save-panel" id="savePanel"><div class="save-panel-heading"><span class="save-icon">▣</span><div><h3>SAVE DATA</h3><p>進行状況は自動保存されています。バックアップを作成すれば、機種変更時にも記録を引き継げます。</p></div></div><div class="save-actions"><button type="button" id="saveExport">セーブデータを書き出す</button><button type="button" id="saveImport">セーブデータを読み込む</button>
 <button id="saveReset" class="save-reset-btn" type="button">SEG MISSIONをリセット</button><input type="file" id="saveFile" accept=".json,application/json" hidden></div><p class="save-note" id="saveMessage" aria-live="polite">※読み込み時は現在のセーブデータが上書きされます。ファイルは自分で保管してください。</p></div></section>
@@ -833,7 +838,7 @@ setInterval(()=>{if(expire404()){renderPhantom();renderMystery()}},60000);
 refreshMenu();renderPhantom();renderMystery();
 })();
 </script><div id="secretSeg" role="group" aria-label="運試し3桁セグ">
-<div class="seg-top"><span class="seg-title">LUCKY DRAW</span><button type="button" class="seg-close" aria-label="セグを閉じる">×</button></div>
+<div class="seg-top"><span class="seg-title">LUCKY DRAW <small class="seg-build">v6.9</small></span><button type="button" class="seg-close" aria-label="セグを閉じる">×</button></div>
 <div class="seg-face"><svg viewBox="0 0 78 29" xmlns="http://www.w3.org/2000/svg" aria-label="3桁の数字"></svg></div>
 <div class="seg-bottom"><span class="seg-caption">3-DIGIT DRAW</span><button type="button" class="seg-roll">抽選</button></div></div>
 <button id="secretSegOpen" type="button" hidden>◉ セグ起動</button>
@@ -842,6 +847,7 @@ refreshMenu();renderPhantom();renderMystery();
 'use strict';
 const el=document.getElementById('secretSeg'),svg=el.querySelector('svg'),open=document.getElementById('secretSegOpen');
 const rollBtn=el.querySelector('.seg-roll'),closeBtn=el.querySelector('.seg-close');
+el.dataset.build='6.9';window.KICHI_SEG_BUILD='6.9';
 const RESULT_STORE='kichiguy_seg_result_v34',VIS_STORE='kichiguy_seg_visible_v34',STATS='kichiguy_seg_stats_v1',MISSIONS='kichiguy_seg_missions_v1';
 const winners=['114','364','514','810','893','931'];
 const bits={'0':[0,1,2,3,4,5],'1':[1,2],'2':[0,1,6,4,3],'3':[0,1,6,2,3],'4':[5,6,1,2],'5':[0,5,6,2,3],'6':[0,5,6,2,3,4],'7':[0,1,2],'8':[0,1,2,3,4,5,6],'9':[0,1,2,3,5,6],'-':[6]};
@@ -872,8 +878,8 @@ function setResult(value,source,fx=''){result={value,source,at:Date.now(),fx};sa
 function showVisible(v){el.hidden=!v;open.hidden=v;try{localStorage.setItem(VIS_STORE,v?'1':'0')}catch(e){}}
 closeBtn.addEventListener('click',()=>showVisible(false));open.addEventListener('click',()=>showVisible(true));showVisible(localStorage.getItem(VIS_STORE)!=='0');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function horror(step){const t=++token;rolling=false;missionPopupsLocked=false;pendingMissionPopups.length=0;rollBtn.disabled=true;clearBlink();notify('horror');colors('normal');el.classList.add('seg-horror');const v=['---','4--','40-','404'][step]||'---';if(step===0){stop();return}const pos=step-1;for(let n=0;n<8;n++){if(t!==token)return;const a=v.split('');a[pos]=String(Math.floor(Math.random()*10));paint(a.join(''));await sleep(40)}if(t===token)paint(v)}
-function stop(){token++;rolling=false;missionPopupsLocked=false;pendingMissionPopups.length=0;rollBtn.disabled=false;el.classList.remove('seg-huge','seg-tiny','seg-blackout','seg-word-mode');colors(result.source);paint(result.value);if(result.source==='normal'&&result.fx==='word')el.classList.add('seg-word-mode');clearBlink();blink(result.value);notify('restore',result.source==='secret'&&winners.includes(result.value))}
+async function horror(step){const t=++token;rolling=false;el.dataset.phase='horror';el.dataset.glow='none';missionPopupsLocked=false;pendingMissionPopups.length=0;rollBtn.disabled=true;clearBlink();notify('horror');colors('normal');el.classList.add('seg-horror');const v=['---','4--','40-','404'][step]||'---';if(step===0){stop();return}const pos=step-1;for(let n=0;n<8;n++){if(t!==token)return;const a=v.split('');a[pos]=String(Math.floor(Math.random()*10));paint(a.join(''));await sleep(40)}if(t===token)paint(v)}
+function stop(){token++;rolling=false;el.dataset.phase='idle';el.dataset.glow='none';missionPopupsLocked=false;pendingMissionPopups.length=0;rollBtn.disabled=false;el.classList.remove('seg-huge','seg-tiny','seg-blackout','seg-word-mode');colors(result.source);paint(result.value);if(result.source==='normal'&&result.fx==='word')el.classList.add('seg-word-mode');clearBlink();blink(result.value);notify('restore',result.source==='secret'&&winners.includes(result.value))}
 function randomDigit(){return String(Math.floor(Math.random()*10))}
 // The jackpot draw stays at 4.5%; effect frequencies are weighted by outcome.
 // Bayes calibration gives approximate standalone effect reliability.
@@ -903,11 +909,11 @@ function pickMainEffect(win){
  let r=Math.random();for(const [name,p] of pool){r-=p;if(r<0)return name}return '';
 }
 async function roll(won=false,source='secret'){
- if(rolling)return false;rolling=true;missionPopupsLocked=true;rollBtn.disabled=true;const t=++token;clearBlink();el.classList.remove('seg-huge','seg-tiny','seg-word-mode');colors(source);notify('rolling');
+ if(rolling)return false;rolling=true;missionPopupsLocked=true;el.dataset.phase='rolling';rollBtn.disabled=true;const t=++token;clearBlink();el.classList.remove('seg-huge','seg-tiny','seg-word-mode');colors(source);notify('rolling');
  const normal=source==='normal';let value,win=false;if(normal){const o=pickOutcome();value=o.value;win=o.win;stats.spins++;if(win)stats.wins++;save(STATS,stats);renderMission();mission('normal');for(const n of [100,500,1000,5000,10000])if(stats.spins>=n)mission('spin'+n);for(const n of [1,10,50,100,500])if(stats.wins>=n)mission('win'+n)}else if(won){value=winners[Math.floor(Math.random()*winners.length)];win=true}else{do{value=String(Math.floor(Math.random()*1000)).padStart(3,'0')}while(winners.includes(value))}
  let fx=normal?pickMainEffect(win):'';
  // White/red glow is a start-of-spin cue, not a post-stop announcement.
- if(normal&&['white','red','gold','rainbow'].includes(fx))colors(source,fx);
+ if(normal&&['white','red','gold','rainbow'].includes(fx)){colors(source,fx);el.dataset.glow=fx;}else{el.dataset.glow='none';}
  if(normal&&fx==='rainbow')mission('rainbow');if(normal&&fx==='gold')mission('gold');if(normal&&fx==='white')mission('white');if(normal&&fx==='red')mission('red');
  // Two or more distinct chance-ups guarantee a jackpot. Losing draws
  // therefore select at most ONE effect, including glow, stop order and flash.
@@ -979,7 +985,7 @@ async function roll(won=false,source='secret'){
    if(k===1&&normal){const a=order.slice(0,2);const tens=value[a[0]]===value[a[1]];if(tens){mission('tenpai');if(value[a[0]]==='7')mission('seven');if(rare){mission('flash');for(let z=0;z<3;z++){if(t!==token)return false;el.classList.toggle('seg-blink');await sleep(120)}el.classList.remove('seg-blink')}await sleep(650)}}
  }
  if(t!==token)return false;
- rolling=false;rollBtn.disabled=false;result={value,source,at:Date.now(),fx};save(RESULT_STORE,result);colors(source);paint(value);clearBlink();if(normal&&win&&fx==='word'){el.classList.add('seg-word-mode');mission('word');}
+ rolling=false;el.dataset.phase='settled';el.dataset.glow='none';rollBtn.disabled=false;result={value,source,at:Date.now(),fx};save(RESULT_STORE,result);colors(source);paint(value);clearBlink();if(normal&&win&&fx==='word'){el.classList.add('seg-word-mode');mission('word');}
  if(win&&normal&&fx==='tiny')el.classList.remove('seg-tiny');
  if(triple(value)){blink(value,()=>{el.classList.remove('seg-huge','seg-tiny')})}else el.classList.remove('seg-huge','seg-tiny');
  notify('settled',source==='secret'&&winners.includes(value));missionPopupsLocked=false;flushMissionPopups();return true;
