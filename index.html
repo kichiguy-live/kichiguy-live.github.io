@@ -529,6 +529,12 @@ window.melSecretTap=(i)=>{if(running||!error.hidden||!secret.hidden)return;
   if(completedHint){
     hintProgress=0;
     clearHints();
+    // 0 -> 8 is stage ONE only: SIGNAL 01 and SEG 4--.
+    document.body.classList.add('mel-hint-1');
+    window.kichiSeg?.horror(1);
+  }else if(i===2&&progress===2){
+    // Continue 8 -> 2 -> 6: stage TWO starts only after the 2 tap.
+    clearHints();
     document.body.classList.add('mel-hint-2');
     window.kichiSeg?.horror(2);
   }else if(i!==0&&progress===0){
