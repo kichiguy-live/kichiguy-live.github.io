@@ -369,7 +369,18 @@ body.mel-gallery-modal-open{overflow:hidden}
 /* Hide the clue among the continuous HOME ticker, not in the hero. */
 .ticker .ticker-cipher{display:inline-block;font-size:9px;font-weight:500;letter-spacing:.08em;color:#ad86b4;opacity:.42;vertical-align:baseline;text-shadow:none;white-space:nowrap;margin:0 .2em}
 @media(max-width:600px){.ticker .ticker-cipher{font-size:8px;opacity:.38}}
-</style></head><body><div aria-hidden="true" id="kichiguy-fog"><span class="fog-bank"></span><span class="fog-bank"></span><span class="fog-bank"></span></div><div class="top"></div><header class="brand-header"><div class="brand-kicker"><span class="led"></span> OFFICIAL WEBSITE <span class="brand-star">✦ ✦ ✦</span></div><div class="brand-word glitch" data-text="KiCHiGUY">KiCHi<span>GUY</span></div><div class="brand-bottom"><span>🎰 SLOT COLLECTION</span><span>✦</span><span>📡 LIVE STREAMING</span></div><div aria-hidden="true" class="pixels">▟ ░ ▞ ░ ▟ ░ ▞ ░ ▟</div></header><nav><div class="navin" id="nav"></div></nav><main class="wrap">
+</style>
+<style id="kichi-phantom-list-v56">
+/* Same single-column horizontal rows as the mission list, on every viewport. */
+#phantomGrid.grid.phantom-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+#phantomGrid .phantom-row{width:100%;min-width:0;box-sizing:border-box}
+#phantomGrid .slot-row-main{min-width:0}
+#phantomGrid .slot-row-main strong{overflow-wrap:anywhere}
+#modalbg .modal{position:relative!important}
+#modalbg .kichi-modal-x{position:relative!important;z-index:2147483000!important;pointer-events:auto!important}
+#modalbg .phantom-detail button[data-close-modal]{position:relative!important;z-index:2147483000!important;pointer-events:auto!important;min-height:48px}
+</style>
+</head><body><div aria-hidden="true" id="kichiguy-fog"><span class="fog-bank"></span><span class="fog-bank"></span><span class="fog-bank"></span></div><div class="top"></div><header class="brand-header"><div class="brand-kicker"><span class="led"></span> OFFICIAL WEBSITE <span class="brand-star">✦ ✦ ✦</span></div><div class="brand-word glitch" data-text="KiCHiGUY">KiCHi<span>GUY</span></div><div class="brand-bottom"><span>🎰 SLOT COLLECTION</span><span>✦</span><span>📡 LIVE STREAMING</span></div><div aria-hidden="true" class="pixels">▟ ░ ▞ ░ ▟ ░ ▞ ░ ▟</div></header><nav><div class="navin" id="nav"></div></nav><main class="wrap">
 <section class="page" id="mission"><div class="section-head"><div class="eyebrow">COLLECTION</div><h2>SEG MISSION</h2><p>セグ抽選でさまざまな演出を発見し、ミッションを達成しよう！</p><p>一度見た演出はコレクションに記録されます。すべての演出を見つけてコンプリートを目指そう！</p></div><div class="mission-summary" id="missionSummary"></div><div class="mission-grid" id="missionGrid"></div><div class="save-panel" id="savePanel"><div class="save-panel-heading"><span class="save-icon">▣</span><div><h3>SAVE DATA</h3><p>進行状況は自動保存されています。バックアップを作成すれば、機種変更時にも記録を引き継げます。</p></div></div><div class="save-actions"><button type="button" id="saveExport">セーブデータを書き出す</button><button type="button" id="saveImport">セーブデータを読み込む</button>
 <button id="saveReset" class="save-reset-btn" type="button">SEG MISSIONをリセット</button><input type="file" id="saveFile" accept=".json,application/json" hidden></div><p class="save-note" id="saveMessage" aria-live="polite">※読み込み時は現在のセーブデータが上書きされます。ファイルは自分で保管してください。</p></div></section>
 
@@ -964,4 +975,32 @@ say('読み込み完了。画面を更新します。');location.reload();
  },true);
  document.addEventListener('keydown',function(event){if(event.key==='Escape'&&bg.classList.contains('open'))dismiss()},true);
 })();
-</script></body></html>
+</script>
+<script id="kichi-modal-close-v56">
+(function(){
+ const bg=document.getElementById('modalbg');
+ if(!bg)return;
+ let lastTouch=0;
+ function close(){
+   bg.classList.remove('open','cinema-modal');
+   bg.style.setProperty('display','none','important');
+   document.body.classList.remove('modal-open');
+ }
+ function handle(e){
+   const t=e.target;
+   if(!(t instanceof Element))return;
+   const btn=t.closest('#modalbg [data-close-modal],#modalbg .kichi-modal-x,#modalbg .cinema-close');
+   if(!btn)return;
+   if(e.type==='touchend')lastTouch=Date.now();
+   if(e.type==='click'&&Date.now()-lastTouch<600){e.preventDefault();return;}
+   e.preventDefault();
+   e.stopImmediatePropagation();
+   close();
+ }
+ // Register on modal itself, independently of the page's delegated handlers.
+ bg.addEventListener('touchend',handle,{capture:true,passive:false});
+ bg.addEventListener('click',handle,true);
+ window.kichiCloseModal=close;
+})();
+</script>
+</body></html>
