@@ -760,10 +760,10 @@ function renderMystery(){
  const grid=$ph('slotGrid');if(!grid)return;
  const q=($ph('search')?.value||'').normalize('NFKC').replace(/[・･\s\-ー]/g,'').toLowerCase();
  const isKey=q==='レムノイドパラメトリカ';
- const needRemnoid=isKey&&!found.includes('remnoid');
+ const needRemnoid=isKey&&found.includes('phantom')&&!found.includes('remnoid');
  const need001=!q&&localStorage.getItem('kichiguy_mel_18_complete_v37')==='1'&&!found.includes('phantom');
  const needSeg=!q&&pending&&pending.id!=='phantom'&&segWinning&&!found.includes(pending.id);
- const specs=[['remnoidMystery',needRemnoid,()=>discover(phantomMachines.find(m=>m.id==='remnoid'))],['phantom001Mystery',need001,()=>discover(phantomMachines.find(m=>m.id==='phantom'))],['phantomMystery',needSeg,()=>discover(pending)]];
+ const specs=[['remnoidMystery',needRemnoid,()=>{if(found.includes('phantom'))discover(phantomMachines.find(m=>m.id==='remnoid'));}],['phantom001Mystery',need001,()=>discover(phantomMachines.find(m=>m.id==='phantom'))],['phantomMystery',needSeg,()=>discover(pending)]];
  for(const [attr,needed,action] of specs){
   const sel='[data-'+attr.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+']';
   const old=grid.querySelector(sel);
