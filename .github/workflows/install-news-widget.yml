@@ -23,12 +23,16 @@ jobs:
           import hashlib,re
           version=hashlib.sha256(Path('news-widget.js').read_bytes()).hexdigest()[:12]
           tag=f'<script defer src="news-widget.js?v={version}"></script>'
-          pattern=r'<script\\s+defer\\s+src=["\\\']news-widget\\.js(?:\\?[^"\\\']*)?["\\\']\\s*></script>'
-          if re.search(pattern,s):
-              updated=re.sub(pattern,lambda _:tag,s,count=1)
+          # Match the existing script regardless of its previous cache key.
+          pattern=r'<script[^>]+news-widget[.]js[^>]*></script>'
+          matches=list(re.finditer(pattern,s,re.I))
+          if matches:
+              updated=re.sub(pattern,'',s,flags=re.I)
+              assert '</body>' in updated, 'Cannot find closing body tag'
+              updated=updated.replace('</body>',tag+'\n</body>',1)
           else:
               assert '</body>' in s, 'Cannot find body closing tag; no changes made'
-              updated=s.replace('</body>',tag+'\\n</body>',1)
+              updated=s.replace('</body>',tag+'\n</body>',1)
           if updated!=s:
               p.write_text(updated,encoding='utf-8')
               print('Updated widget script cache key:',version)
