@@ -35,6 +35,25 @@ jobs:
           else:
               print('Widget script already current:',version)
           PY
+      - name: Update two slot ownership statuses
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old1='"id":19,"name":"S 喰霊-零- 運命乱～うんめいのみだれ～","maker":"JFJ","status":"current"'
+          new1='"id":19,"name":"S 喰霊-零- 運命乱～うんめいのみだれ～","maker":"JFJ","status":"past"'
+          old2='"id":28,"name":"パチスロ FAIRY TAIL","maker":"藤商事","status":"past"'
+          new2='"id":28,"name":"パチスロ FAIRY TAIL","maker":"藤商事","status":"current"'
+          for before,after in [(old1,new1),(old2,new2)]:
+              if before in s:
+                  assert s.count(before)==1, 'Ambiguous slot entry; aborting'
+                  s=s.replace(before,after,1)
+              else:
+                  assert s.count(after)==1, 'Expected slot entry missing; aborting'
+          p.write_text(s,encoding='utf-8')
+          print('Verified two ownership entries: 喰霊 past / FAIRY TAIL current')
+          PY
       - name: Commit only homepage change
         run: |
           if ! git diff --quiet -- index.html; then
