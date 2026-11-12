@@ -1,0 +1,22 @@
+name: Inspect slot ownership markup
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/inspect-owned-slots.yml']
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find ownership entries
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          for pattern in ['喰霊','フェアリーテイル','FAIRY TAIL','過去所持','現在所持']:
+              matches=list(re.finditer(re.escape(pattern),s,re.I))
+              print('PATTERN',pattern,'COUNT',len(matches))
+              for m in matches[:8]:
+                  print('AT',m.start(),'CONTEXT',repr(s[max(0,m.start()-180):m.end()+180]))
+          PY
