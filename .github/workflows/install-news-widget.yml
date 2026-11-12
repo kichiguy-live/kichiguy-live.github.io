@@ -20,14 +20,20 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          tag='<script defer src="news-widget.js"></script>'
-          if tag in s:
-              print('News widget already installed')
+          import hashlib,re
+          version=hashlib.sha256(Path('news-widget.js').read_bytes()).hexdigest()[:12]
+          tag=f'<script defer src="news-widget.js?v={version}"></script>'
+          pattern=r'<script\\s+defer\\s+src=["\\\']news-widget\\.js(?:\\?[^"\\\']*)?["\\\']\\s*></script>'
+          if re.search(pattern,s):
+              updated=re.sub(pattern,lambda _:tag,s,count=1)
           else:
               assert '</body>' in s, 'Cannot find body closing tag; no changes made'
-              s=s.replace('</body>',tag+'\n</body>',1)
-              p.write_text(s,encoding='utf-8')
-              print('News widget installed')
+              updated=s.replace('</body>',tag+'\\n</body>',1)
+          if updated!=s:
+              p.write_text(updated,encoding='utf-8')
+              print('Updated widget script cache key:',version)
+          else:
+              print('Widget script already current:',version)
           PY
       - name: Commit only homepage change
         run: |
