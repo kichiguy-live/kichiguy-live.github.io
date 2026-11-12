@@ -1,0 +1,34 @@
+name: Update slot ownership
+on:
+  push:
+    paths: ['.github/workflows/update-slot-ownership.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Change only two ownership statuses
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          rules=[
+            (r'("id":19,"name":"S 喰霊-零- 運命乱～うんめいのみだれ～","maker":"JFJ","status":")current(")',"past"),
+            (r'("id":28,"name":"パチスロ FAIRY TAIL","maker":"藤商事","status":")past(")',"current"),
+          ]
+          for pattern,status in rules:
+              s,count=re.subn(pattern,lambda m:m.group(1)+status+m.group(2),s)
+              assert count==1, f'Expected exactly one matching entry: {pattern}; found {count}'
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit ownership changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Move Garei Zero to past and FAIRY TAIL to current"
+          git push
