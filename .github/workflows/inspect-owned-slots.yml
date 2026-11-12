@@ -19,4 +19,18 @@ jobs:
               print('PATTERN',pattern,'COUNT',len(matches))
               for m in matches[:8]:
                   print('AT',m.start(),'CONTEXT',repr(s[max(0,m.start()-180):m.end()+180]))
+          out=[]
+          for pattern in ['喰霊','フェアリーテイル','FAIRY TAIL']:
+              matches=list(re.finditer(re.escape(pattern),s,re.I))
+              out.append(f'PATTERN {pattern} COUNT {len(matches)}')
+              for m in matches[:12]:
+                  out.append(repr(s[max(0,m.start()-450):m.end()+450]))
+          Path('slot-inspection.txt').write_text('\\n'.join(out),encoding='utf-8')
           PY
+      - name: Commit inspection
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add slot-inspection.txt
+          git commit -m "Inspect slot collection entries" || true
+          git push
