@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     paths: ['.github/workflows/inspect-owned-slots.yml']
+permissions:
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-latest
