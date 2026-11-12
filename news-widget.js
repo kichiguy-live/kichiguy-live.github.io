@@ -1,0 +1,9 @@
+(()=>{if(document.getElementById('kichi-news-button'))return;
+const style=document.createElement('style');style.textContent=`#kichi-news-button{position:fixed;top:16px;right:16px;z-index:9000;background:#24112d;color:white;border:1px solid #ff76d2;border-radius:99px;padding:11px 15px;font-weight:700;box-shadow:0 0 16px #ff43a966}#kichi-news-panel[hidden]{display:none}#kichi-news-panel{position:fixed;inset:0;z-index:9001;background:#090411dd;display:grid;place-items:center;padding:20px}#kichi-news-card{background:#21122e;color:white;border:1px solid #b254aa;border-radius:16px;padding:24px;width:min(520px,100%);box-shadow:0 0 45px #e33eac44}#kichi-news-card h2{margin-top:0}#kichi-news-card time{color:#8ff8ef}#kichi-news-close{float:right;background:#42224c;color:white;border:1px solid #9b64a7;border-radius:8px;padding:6px 12px}`;document.head.append(style);
+const button=document.createElement('button');button.id='kichi-news-button';button.textContent='📢 お知らせ';button.setAttribute('aria-expanded','false');
+const panel=document.createElement('div');panel.id='kichi-news-panel';panel.hidden=true;panel.innerHTML='<section id="kichi-news-card" role="dialog" aria-modal="true" aria-label="お知らせ"><button id="kichi-news-close" aria-label="閉じる">×</button><h2>📢 お知らせ</h2><article><time datetime="2026-11-12">2026.11.12</time><h3>お知らせ欄を追加しました！</h3><p>KiCHiGUY LIVE公式サイトにお知らせ欄を追加しました。今後の更新情報はこちらでお届けします！</p></article></section>';
+document.body.append(button,panel);
+function close(){panel.hidden=true;button.setAttribute('aria-expanded','false');button.focus()}
+button.onclick=()=>{panel.hidden=false;button.setAttribute('aria-expanded','true');panel.querySelector('button').focus()};
+panel.querySelector('button').onclick=close;panel.onclick=e=>{if(e.target===panel)close()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)close()});
+})();
