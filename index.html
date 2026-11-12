@@ -1909,4 +1909,5 @@ popup.querySelector('button').addEventListener('click',()=>{popup.hidden=true;re
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!pad.hidden)closePad();else if(!show.hidden&&show.classList.contains('kk-result-on'))closeShow();return}if(pad.hidden||e.ctrlKey||e.altKey||e.metaKey||e.repeat)return;const map={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R'};const key=map[e.key]||(/^[ab]$/i.test(e.key)?e.key.toUpperCase():null);if(key){e.preventDefault();feed(key)}});
 })();
 </script>
+<script defer src="news-widget.js"></script>
 </body></html>
