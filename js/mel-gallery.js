@@ -1,0 +1,8 @@
+(function(){
+const modal=document.getElementById('melGalleryLightbox');
+const photo=modal.querySelector('img');const caption=modal.querySelector('.mel-lb-caption');const close=modal.querySelector('button');let previous=null;
+function hide(){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('mel-gallery-modal-open');photo.removeAttribute('src');if(previous)previous.focus({preventScroll:true});}
+function show(item){const img=item.querySelector('img');if(!img)return;previous=item;photo.src=img.currentSrc||img.src;photo.alt=img.alt||'メル';caption.textContent=item.querySelector('span')?.textContent||img.alt||'';modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');document.body.classList.add('mel-gallery-modal-open');close.focus({preventScroll:true});}
+document.querySelectorAll('.mel-gallery .mel-gallery-item').forEach(item=>{item.setAttribute('role','button');item.setAttribute('tabindex','0');item.setAttribute('aria-label',(item.querySelector('span')?.textContent||'メルの画像')+'を拡大');item.addEventListener('click',()=>show(item));item.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show(item);}})});
+close.addEventListener('click',hide);modal.addEventListener('click',e=>{if(e.target===modal)hide()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('is-open'))hide()});
+})();

@@ -1,0 +1,40 @@
+name: Migration browser smoke test
+on:
+  push:
+    branches: [site-migration-test]
+    paths: ['.github/workflows/browser-test.yml']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8000 &
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            page.on('response',r=>{if(r.status()>=400 && r.url().startsWith('http://localhost:8000') && !r.url().endsWith('favicon.ico'))errors.push(r.status()+' '+r.url())});
+            await page.goto('http://localhost:8000/',{waitUntil:'networkidle'});
+            await page.locator('#kichi-news-button').click();
+            await page.locator('.kichi-news-item').first().click();
+            if(!(await page.locator('#kichi-news-article-heading').innerText()).includes('ケロロ軍曹'))throw Error('Announcement missing');
+            await page.locator('#kichi-news-back').click();
+            await page.locator('#kichi-news-close').click();
+            await page.screenshot({path:'migration-preview.png',fullPage:true});
+            await browser.close();
+            if(errors.length)throw Error(errors.join('\n'));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: migration-preview
+          path: migration-preview.png
